@@ -1,9 +1,7 @@
 package org.swissbib.mf.mongo;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
+import com.mongodb.*;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import org.bson.conversions.Bson;
 import org.culturegraph.mf.framework.ObjectPipe;
@@ -17,10 +15,12 @@ import org.culturegraph.mf.mongodb.common.MongoDBConnection;
 import org.culturegraph.mf.mongodb.common.MongoDBKeys;
 import org.culturegraph.mf.mongodb.common.SimpleMongoDBConnection;
 import org.culturegraph.mf.strings.StringReader;
+import org.swissbib.mf.mongo.common.SimpleSwissbibMongoDBConnection;
 import org.swissbib.mf.mongo.preprocessing.DefaultPreprocessing;
 
 import java.io.ByteArrayOutputStream;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.zip.DataFormatException;
@@ -57,9 +57,30 @@ import java.util.zip.Inflater;
 @Out(StreamReceiver.class)
 public class SwissbibMongoDBReader implements ObjectPipe<String, ObjectReceiver<String>> {
 
-    private final MongoDBConnection mongoDBConnection;
+    private MongoDBConnection mongoDBConnection;
 
     private ObjectReceiver<String> objectReceiver;
+
+
+    private String user = null;
+
+    private String password = null;
+
+    private String host = null;
+
+    private String database = null;
+
+    private String collection = null;
+
+    private String port = null;
+
+    private String matcher = "DEFAULT";
+
+
+
+    public SwissbibMongoDBReader(){
+
+    }
 
 
     /**
@@ -85,6 +106,10 @@ public class SwissbibMongoDBReader implements ObjectPipe<String, ObjectReceiver<
         //        Filters.eq("status", "updated")
         //);
 
+        if (this.mongoDBConnection == null) {
+            this.mongoDBConnection = this.createMongoConnection();
+        }
+
         DBObject clause1 = new BasicDBObject("status", "new");
         DBObject clause2 = new BasicDBObject("status", "updated");
         BasicDBList or = new BasicDBList();
@@ -103,7 +128,7 @@ public class SwissbibMongoDBReader implements ObjectPipe<String, ObjectReceiver<
             if (record.isPresent()) {
 
                 String unzippedRecord = record.get();
-                String body = DefaultPreprocessing.cleanRecord(unzippedRecord);
+                String body = DefaultPreprocessing.cleanRecord(unzippedRecord, this.matcher);
 
                 objectReceiver.process(body);
             }
@@ -152,6 +177,46 @@ public class SwissbibMongoDBReader implements ObjectPipe<String, ObjectReceiver<
         }
 
         return opt;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public void setDatabase(String database) {
+        this.database = database;
+    }
+
+    public void setCollection(String collection) {
+        this.collection = collection;
+    }
+
+    public void setPort(String port) {
+        this.port = port;
+    }
+
+    public void setMatcher(String matcher) {
+        this.matcher = matcher;
+    }
+
+    private MongoDBConnection createMongoConnection() {
+
+        return new SimpleSwissbibMongoDBConnection(this.host,
+                this.port,
+                this.user,
+                this.password,
+                this.database,
+                this.collection
+                );
+
     }
 
 }
