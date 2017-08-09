@@ -20,10 +20,16 @@ public class SimpleSwissbibMongoDBConnection implements MongoDBConnection {
                                            String collection) {
 
         ServerAddress server = new ServerAddress(host, Integer.valueOf(port));
-        MongoCredential credential = MongoCredential.createMongoCRCredential(
-                user,"admin",password.toCharArray());
 
-        this.mongoClient  = new MongoClient(server, Arrays.asList(credential));
+        if (user != null && password != null){
+            MongoCredential credential = MongoCredential.createMongoCRCredential(
+                    user,"admin",password.toCharArray());
+            this.mongoClient  = new MongoClient(server, Arrays.asList(credential));
+
+        } else {
+            this.mongoClient  = new MongoClient(server);
+        }
+
         //todo : change to new API
         DB db = this.mongoClient.getDB(database);
         this.dbCollection = db.getCollection(collection);
